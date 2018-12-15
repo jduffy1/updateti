@@ -1,0 +1,4 @@
+#!/bin/bash
+cd test
+PYTHONPATH=../src/ nosetests --with-coverage --cover-package update_ti_calendar .
+cd ..
