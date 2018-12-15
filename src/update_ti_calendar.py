@@ -1,3 +1,4 @@
+from collections import namedtuple
 import datetime
 import json
 import logging
@@ -19,6 +20,9 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+RaceData = namedtuple('RaceData',
+                      ["location", "title", "race_type", "distance", "organiser", "entry_url", "start_time"])
+
 
 class CalendarDownloader(object):
 
@@ -34,6 +38,38 @@ class CalendarDownloader(object):
         else:
             logger.error("Error downloading calendar from %s. Response code: %s, Body: %s", RACE_REQUEST_SERVICE,
                          response.status_code, response.text)
+
+
+class Race(RaceData):
+    pass
+
+
+class RaceProcessor(object):
+
+    @staticmethod
+    def _create_race(race_json):
+        location = ",".join([race_json["Location"], race_json["LocationTown"], race_json["LocationCounty"]])
+        title = race_json["Name"].encode('utf-8')
+        race_type = race_json["TypeBySport"].encode('utf-8')
+        distance = race_json["Distance"].encode('utf-8')
+        organiser = race_json["OrganisationOther"].encode('utf-8')
+        entry_url = race_json["OrganiserEntryUrl"].encode('utf-8')
+        start_time = race_json["RaceDateTime"].encode('utf-8')
+        default_entry_url = TI_RACE_ENTRY_URL % race_json["Id"]
+
+        if entry_url == '':
+            if requests.get(default_entry_url).status_code == requests.codes.ok:
+                entry_url = default_entry_url
+            else:
+                entry_url = "Link to Entry Website not available"
+        return Race(location, title, race_type, distance, organiser, entry_url, start_time)
+
+    @staticmethod
+    def process_race_calendar(calendar_json):
+        race_list = []
+        for race_json in calendar_json:
+            race_list.append(RaceProcessor._create_race(race_json))
+        return race_list
 
 
 class Utils(object):
