@@ -2,4 +2,6 @@
 lambda/
 old/
 service_auth.json
+*.pyc
+.coverage
 
